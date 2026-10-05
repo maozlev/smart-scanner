@@ -21,3 +21,6 @@ fixtures/
 # screenshots and downloads from scripts/browser-check
 scripts/browser-check/out/
 scripts/demo-video/out/
+.vercel
+.env*
+!.env.example
