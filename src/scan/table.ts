@@ -12,7 +12,7 @@ import { validateRow, weightTotalMatches, type RowFields, type RowFlag } from '.
 const ROW_APPROVE_CONF = 0.8;
 // the printed grand total reconciles: the weight column is checksummed
 const CHECKSUMMED_CONF = 0.95;
-const PREVIEW_MAX_W = 1100;
+const PREVIEW_MAX_W = 1400;
 // A note is read as one line the width of the table, so it is shrunk far more than a cell
 // before recognition, and thick strokes then swallow its decimal point. Measured on the NCD
 // sheet's "Total Weight: 3814.4 kg": 1-2 px reads it right, 2.5-3 px reads "38144".
@@ -35,7 +35,6 @@ export interface ScannedRow {
   confidence: number;
   autoApproved: boolean;
   line: CutLine;
-  preview: GrayImage;
 }
 
 export interface ScannedTable {
@@ -48,14 +47,13 @@ export interface ScannedTable {
   rows: ScannedRow[];
   declaredTotalWeightKg: number | null;
   weightTotalMatches: boolean | null;
-  preview: GrayImage | null; // unknown tables: the whole grid, for the operator to recognise
+  preview: GrayImage; // the whole grid as drawn, for the operator to compare the values against
   raw: RawGrid | null; // unknown tables: every cell as read, for the operator to map by hand
 }
 
 /** A grid read cell by cell with no idea what its columns mean (see manual.ts). */
 export interface RawGrid {
   cells: CellRead[][]; // [row][col], every grid row including whatever is a header
-  rowPreviews: GrayImage[];
 }
 
 export interface PageScan {
@@ -209,10 +207,9 @@ async function scanGrid(
   if (cls.kind === 'unknown') {
     // Digits read in any script, so the numbers are worth having even when the headers are
     // not understood: the operator says what each column is and types what could not be read.
-    const raw: RawGrid = { cells: [], rowPreviews: [] };
+    const raw: RawGrid = { cells: [] };
     for (let r = 0; r < grid.nRows; r++) {
       raw.cells.push(await readRow(r));
-      raw.rowPreviews.push(shrink(image.row(r), PREVIEW_MAX_W));
       await onRow();
     }
     return { ...base, kind: 'unknown', rows: [], declaredTotalWeightKg: null, weightTotalMatches: null, preview: shrink(image, PREVIEW_MAX_W), raw };
@@ -239,10 +236,10 @@ async function scanGrid(
     if (line.type === '') flags.push('no_material');
     if (line.lengthMm === null) flags.push('no_size');
     if (confidence < ROW_APPROVE_CONF) flags.push('low_confidence');
-    return { rowIndex, cells, fields, flags, confidence, autoApproved: flags.length === 0, line, preview: shrink(image.row(rowIndex), PREVIEW_MAX_W) };
+    return { rowIndex, cells, fields, flags, confidence, autoApproved: flags.length === 0, line };
   });
 
-  return { ...base, kind: 'materials', rows, declaredTotalWeightKg: declared, weightTotalMatches: weightOk, preview: null, raw: null };
+  return { ...base, kind: 'materials', rows, declaredTotalWeightKg: declared, weightTotalMatches: weightOk, preview: shrink(image, PREVIEW_MAX_W), raw: null };
 }
 
 /** Every material table on one page. `onRow` is awaited once per data row read. */

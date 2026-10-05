@@ -5,11 +5,11 @@ import { ARCHIVE_LIMIT, combineEntries, combinedFiles, combinedName, defaultName
 import { includedLines } from './review';
 import type { ReviewRow, ReviewTable, RowDecision } from './scanner';
 
-const row = (id: string, line: CutLine, decision: RowDecision = 'auto'): ReviewRow => ({ id, line, flags: [], decision, image: 'data:image/png;base64,AAAA' });
+const row = (id: string, line: CutLine, decision: RowDecision = 'auto'): ReviewRow => ({ id, line, flags: [], decision });
 const bar = (type: string, label: string, lengthMm: number | null, qty: number | null): CutLine => ({ type, label, lengthMm, widthMm: null, qty });
 
 function table(id: string, fileName: string, rows: ReviewRow[], kind: 'materials' | 'unknown' = 'materials'): ReviewTable {
-  return { id, fileName, pageNumber: 1, kind, unreadable: false, rows, declaredTotalWeightKg: null, weightTotalMatches: null, image: null, size: '', raw: null, mapping: null };
+  return { id, fileName, pageNumber: 1, kind, unreadable: false, rows, declaredTotalWeightKg: null, weightTotalMatches: null, image: 'data:image/png;base64,AAAA', size: '', raw: null, mapping: null };
 }
 
 const NOW = new Date('2026-10-05T10:00:00Z');

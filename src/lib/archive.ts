@@ -98,7 +98,7 @@ function toReview(table: ArchivedTable, id: string): ReviewTable {
     pageNumber: table.pageNumber,
     kind: 'materials',
     unreadable: false,
-    rows: table.rows.map((r, i): ReviewRow => ({ id: `${id}#${i}`, line: r.line, flags: r.flags, decision: r.decision, image: '' })),
+    rows: table.rows.map((r, i): ReviewRow => ({ id: `${id}#${i}`, line: r.line, flags: r.flags, decision: r.decision })),
     declaredTotalWeightKg: null,
     weightTotalMatches: null,
     image: null,

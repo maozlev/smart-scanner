@@ -56,7 +56,7 @@ try {
 
   const alerts = await page.locator('.alert').allInnerTexts();
   check('review shows no error', alerts.length === 0, alerts.join(' | '));
-  const rows = page.locator('table.review tbody tr:not(.evidence)');
+  const rows = page.locator('table.review tbody tr:not(.reasons)');
   check('30 rows read', (await rows.count()) === 30, String(await rows.count()));
   const auto = await page.locator('table.review .chip.ok').count();
   check('all 30 rows auto-approved', auto === 30, String(auto));
@@ -64,8 +64,17 @@ try {
   const first = rows.nth(2).locator('input');
   const values = await Promise.all([0, 1, 2, 3, 4].map((i) => first.nth(i).inputValue()));
   check('row 828 reads L60X60X6 / 1052 / 4', values.join('|') === 'L60X60X6|828 Horizontal|1052||4', values.join('|'));
-  const images = await page.locator('table.review tr.evidence img').evaluateAll((list) => list.filter((i) => i.naturalWidth > 100).length);
-  check('every row shows its drawing strip', images === 30, String(images));
+  // the table as drawn sits above one plain grid of quantities; nothing is interleaved
+  const scan = page.locator('section.card', { has: page.locator('table.review') }).locator('.table-scan img');
+  check('the scanned table is shown whole, above the quantities', (await scan.count()) === 1 && (await scan.evaluate((img) => img.naturalWidth > 600 && img.naturalHeight > 600)) && (await scan.boundingBox()).y < (await page.locator('table.review').boundingBox()).y);
+  check('the quantities are one row per part', (await page.locator('table.review tbody tr').count()) === 30);
+  const columns = await page.evaluate(() => {
+    const left = (el) => Math.round(el.getBoundingClientRect().right);
+    const heads = [...document.querySelectorAll('table.review thead th')].slice(1, 6).map(left);
+    return [...document.querySelectorAll('table.review tbody tr')].every((tr) => [...tr.querySelectorAll('input')].every((input, i) => Math.abs(left(input) - heads[i]) <= 12));
+  });
+  check('every value sits under its heading', columns);
+
   await page.screenshot({ path: join(out, 'review.png') });
   const unknown = page.locator('img.unknown-table');
   for (let i = 0; i < (await unknown.count()); i++) await unknown.nth(i).screenshot({ path: join(out, `unknown-${i}.png`) });
@@ -73,6 +82,7 @@ try {
   // a wrong edit must take the row out of the list until it is whole again
   await first.nth(2).fill('');
   check('emptied length leaves the list', (await page.locator('table.review .chip.warn').count()) === 1);
+  check('the waiting row says why, on its own line', (await page.locator('table.review tr.reasons').innerText()).includes('חסר אורך'));
   await first.nth(2).fill('1052');
   check('restored length is approved again', (await page.locator('table.review .chip.ok').count()) === 30);
 

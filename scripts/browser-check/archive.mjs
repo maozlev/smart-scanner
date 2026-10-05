@@ -69,7 +69,7 @@ try {
 
   // a review edit is written through to the entry: reject one row
   await tab('סקירה').click();
-  await page.locator('table.review tbody tr:not(.evidence)').first().getByRole('button', { name: 'דחייה' }).click();
+  await page.locator('table.review tbody tr:not(.reasons)').first().getByRole('button', { name: 'דחייה' }).click();
   await tab('ארכיון').click();
   check('rejecting a row updates the entry', (await archiveRows().first().locator('td').nth(4).innerText()) === '29');
   await archiveRows().first().locator('input[aria-label="שם הסריקה"]').fill('מגדל א');
@@ -81,7 +81,7 @@ try {
 
   await archiveRows().first().getByRole('button', { name: 'שחזר' }).click();
   await page.waitForSelector('table.review');
-  const restored = page.locator('table.review tbody tr:not(.evidence)');
+  const restored = page.locator('table.review tbody tr:not(.reasons)');
   check('restore brings back 30 rows', (await restored.count()) === 30);
   check('restore keeps the decisions', (await page.locator('table.review .chip.ok').count()) === 29 && (await page.locator('table.review .chip.off').count()) === 1);
   await page.screenshot({ path: join(out, 'archive-restored.png') });

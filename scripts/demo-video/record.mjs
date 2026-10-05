@@ -117,16 +117,21 @@ await caption('');
 await wait(500);
 const posterAt = Date.now() - recordingStarted + 2500;
 
-await caption('כל שורה מוצגת מול השורה שבשרטוט');
+await caption('למעלה: הטבלה כפי שהיא בשרטוט');
+await moveTo(page.locator('.table-scan'));
+await wait(3400);
+await caption('מתחתיה: הכמויות שנקראו, שורה לכל חלק');
+await page.locator('table.review').evaluate((el) => el.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+await wait(900);
 await page.mouse.move(560, 300, { steps: 20 });
-await wait(3600);
+await wait(3000);
 await caption('שורה שהחשבון שלה מסתדר מאושרת אוטומטית');
 await moveTo(page.locator('table.review .chip.ok').nth(1));
-await wait(3200);
+await wait(3000);
 await caption('כל ערך אפשר לתקן, לאשר או לדחות');
-await moveTo(page.locator('table.review tbody tr:not(.evidence)').nth(2).locator('input[aria-label="אורך"]'));
+await moveTo(page.locator('table.review tbody tr:not(.reasons)').nth(2).locator('input[aria-label="אורך"]'));
 await wait(1200);
-await moveTo(page.locator('table.review tbody tr:not(.evidence)').nth(2).getByRole('button', { name: 'דחייה' }));
+await moveTo(page.locator('table.review tbody tr:not(.reasons)').nth(2).getByRole('button', { name: 'דחייה' }));
 await wait(2400);
 
 await caption('');

@@ -95,12 +95,13 @@ try {
   await bar.getByRole('button', { name: 'סריקה' }).tap();
   await page.waitForSelector('table.review', { timeout: 300000 });
   check('scan from the bottom bar opens the review', true, `${((Date.now() - started) / 1000).toFixed(1)} s`);
-  const rows = page.locator('table.review tbody tr:not(.evidence)');
+  const rows = page.locator('table.review tbody tr:not(.reasons)');
   check('8 rows, all approved', (await rows.count()) === 8 && (await page.locator('table.review .chip.ok').count()) === 8);
   const card = await rows.first().evaluate((tr) => ({ display: getComputedStyle(tr).display, label: getComputedStyle(tr.children[1], '::before').content }));
   check('each row is a card with labelled fields', card.display === 'block' && card.label.includes('סוג'), `${card.display} ${card.label}`);
-  const strip = await page.locator('table.review tr.evidence img').first().boundingBox();
-  check('the drawing strip keeps a readable height', strip.height >= 40, `${Math.round(strip.height)}px`);
+  const scanned = await page.locator('.table-scan img').boundingBox();
+  const frame = await page.locator('.table-scan').boundingBox();
+  check('the scanned table keeps a readable size and scrolls in its own window', scanned.width >= 700 && frame.width <= 390, `${Math.round(scanned.width)}px in a ${Math.round(frame.width)}px window`);
   await fits('review');
   await shot('review');
 

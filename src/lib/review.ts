@@ -73,7 +73,6 @@ export function mapTable(table: ReviewTable, mapping: ManualMapping): ReviewTabl
       line: row.line,
       flags: row.doubtful ? ['low_confidence'] : [],
       decision: 'pending',
-      image: raw.rowImages[row.rowIndex] ?? '',
     })),
   };
 }

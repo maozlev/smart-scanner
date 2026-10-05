@@ -75,7 +75,7 @@ try {
     await pile.getByRole('button', { name: 'יצירת שורות' }).click();
     const mapped = page.locator('section.card', { has: page.locator('table.review') });
     await mapped.waitFor();
-    const rows = mapped.locator('table.review tbody tr:not(.evidence)');
+    const rows = mapped.locator('table.review tbody tr:not(.reasons)');
     const lines = [];
     for (let r = 0; r < (await rows.count()); r++) {
       const inputs = rows.nth(r).locator('input');

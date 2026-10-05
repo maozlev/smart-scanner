@@ -14,7 +14,6 @@ export interface ReviewRow {
   line: CutLine;
   flags: RowFlag[];
   decision: RowDecision;
-  image: string; // data URL of the row as drawn on the sheet
 }
 
 export interface ReviewTable {
@@ -28,10 +27,10 @@ export interface ReviewTable {
   rows: ReviewRow[];
   declaredTotalWeightKg: number | null;
   weightTotalMatches: boolean | null;
-  image: string | null; // unknown tables: the whole grid
+  image: string | null; // the whole grid as drawn on the sheet; null for a scan restored from the archive
   size: string; // rows x columns, for telling unknown tables apart
   // tables the scanner did not understand: every cell as read, for the operator to map
-  raw: { cells: CellRead[][]; rowImages: string[] } | null;
+  raw: { cells: CellRead[][] } | null;
   mapping: ManualMapping | null; // set once the operator has mapped the columns
 }
 
@@ -59,7 +58,7 @@ interface PdfJs {
   };
 }
 interface Ort extends OrtLike {
-  env: { wasm: { wasmPaths: string; numThreads: number } };
+  env: { wasm: { wasmPaths: string; numThreads: number; proxy: boolean } };
   InferenceSession: { create(model: ArrayBuffer): Promise<OrtSessionLike> };
 }
 
@@ -70,6 +69,7 @@ interface Runtime {
 let runtime: Promise<Runtime> | null = null;
 
 const OCR_THREADS = Number(process.env.NEXT_PUBLIC_OCR_THREADS ?? 4);
+const OCR_PROXY = process.env.NEXT_PUBLIC_OCR_PROXY !== '0';
 
 // Loaded by URL so the bundler does not try to package WebAssembly glue and a 10 MB model.
 const load = (url: string) => import(/* webpackIgnore: true */ /* turbopackIgnore: true */ url);
@@ -93,6 +93,10 @@ function loadRuntime(): Promise<Runtime> {
     // Threads need SharedArrayBuffer, which the browser grants only to a cross-origin isolated
     // page (the headers in next.config.ts). Without it the recognizer runs on one core.
     ort.env.wasm.numThreads = globalThis.crossOriginIsolated ? Math.min(OCR_THREADS, navigator.hardwareConcurrency || 1) : 1;
+    // The runtime lives in its own worker. On the page's thread a multi-threaded run blocks
+    // the page while it waits for its helpers, and under load that wait was seen to stall a
+    // scan for minutes; a worker may block freely, and the page stays responsive.
+    ort.env.wasm.proxy = OCR_PROXY;
     const session = await ort.InferenceSession.create(model);
     return { pdfjs, rec: new Recognizer(ort, session, keys) };
   })();
@@ -134,13 +138,12 @@ function toReview(table: ScannedTable, fileName: string, pageNumber: number, ind
       line: row.line,
       flags: row.flags,
       decision: row.autoApproved ? 'auto' : 'pending',
-      image: toDataUrl(row.preview),
     })),
     declaredTotalWeightKg: table.declaredTotalWeightKg,
     weightTotalMatches: table.weightTotalMatches,
-    image: table.preview ? toDataUrl(table.preview) : null,
+    image: toDataUrl(table.preview),
     size: `${table.nRows}×${table.nCols}`,
-    raw: table.raw ? { cells: table.raw.cells, rowImages: table.raw.rowPreviews.map(toDataUrl) } : null,
+    raw: table.raw ? { cells: table.raw.cells } : null,
     mapping: null,
   };
 }

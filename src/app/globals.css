@@ -893,14 +893,45 @@ a.download {
   color: var(--c-ink-muted);
 }
 
-table.review input {
+/* one grid for the whole table: fixed columns, so a value never drifts from its heading */
+table.review {
+  table-layout: fixed;
   width: 100%;
-  min-width: 90px;
+  min-width: 860px;
 }
 
+table.review col.c-status {
+  width: 132px;
+}
+
+table.review col.c-type {
+  width: 24%;
+}
+
+table.review col.c-num {
+  width: 104px;
+}
+
+table.review col.c-actions {
+  width: 176px;
+}
+
+table.review th,
+table.review td {
+  text-align: start;
+  vertical-align: middle;
+}
+
+/* Latin and Hebrew values alike start at the heading's edge; start would follow each
+   value's own direction and scatter them */
+table.review input,
 table.review input.num {
-  min-width: 70px;
-  max-width: 110px;
+  width: 100%;
+  text-align: right;
+}
+
+table.review td.actions {
+  text-align: end;
 }
 
 table.review td.actions {
@@ -916,20 +947,41 @@ table.review tr.rejected input {
   text-decoration: line-through;
 }
 
-/* the row as drawn on the sheet, right under the values read from it */
-table.review tr.evidence td {
-  padding-top: 0;
-  border-top: none;
+/* A review card reads top to bottom: the table as drawn on the sheet, then the quantities
+   read from it as one plain grid. */
+.review-card h3 {
+  font-size: 14px;
+  margin-top: 6px;
 }
 
-table.review tr.evidence img,
-img.unknown-table {
-  display: block;
-  max-width: 100%;
-  height: auto;
+.review-card h2 + h3 {
+  margin-top: 0;
+}
+
+/* the drawing is its own window: tall tables scroll inside it instead of pushing the
+   quantities off the screen */
+.table-scan {
+  max-height: 420px;
+  overflow: auto;
+  direction: ltr; /* a drawing reads left to right: start at its first column */
   border: 1px solid var(--c-line);
   border-radius: var(--r-sm);
   background: #fff;
+}
+
+.table-scan img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+/* why a row is waiting, on its own line under the row it belongs to */
+table.review tr.reasons td {
+  padding-top: 0;
+  border-top: none;
+  font-size: 12px;
+  color: var(--c-red);
 }
 
 /* choosing what each column of an un-understood table holds */
@@ -963,17 +1015,15 @@ table.mapping-grid tr.header-row td {
   background: var(--c-surface-2);
 }
 
-table.review .reasons {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--c-red);
-}
-
 /* ---- scan screens on a phone ---- */
 @media (max-width: 699px) {
   /* a figure that does not apply to this row (length of a plate) takes no line */
   table.cards td.na {
     display: none;
+  }
+
+  table.review.cards {
+    min-width: 0;
   }
 
   table.review.cards input,
@@ -989,35 +1039,27 @@ table.review .reasons {
     padding-top: 6px;
   }
 
-  /* a row and the strip of drawing under it read as one card */
-  table.review.cards tr:not(.evidence) {
-    margin-bottom: 0;
-    border-bottom: none;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-  }
-
-  table.review.cards tr.evidence {
+  /* the reason sits inside the card of the row it explains */
+  table.review.cards tr.reasons {
     border-top: none;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
+    margin-top: -9px;
     padding-top: 0;
   }
 
-  table.review.cards tr.evidence td {
+  table.review.cards tr.reasons td {
     display: block;
   }
 
-  /* the strip keeps a readable height and scrolls sideways instead of shrinking to a hairline */
-  .strip-scroll {
-    overflow-x: auto;
-    direction: ltr; /* the drawing reads left to right: start at its first column */
+  /* the drawing keeps a readable size and scrolls in both directions instead of shrinking */
+  .table-scan {
+    max-height: 300px;
   }
 
-  table.review tr.evidence .strip-scroll img {
+  .table-scan img {
     max-width: none;
-    width: auto;
-    height: 46px;
+    width: 760px;
   }
 
   .mapping .fields {

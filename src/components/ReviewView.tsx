@@ -20,8 +20,8 @@ function Status({ row }: { row: ReviewRow }) {
 function Row({ row, onChange }: { row: ReviewRow; onChange: (row: ReviewRow) => void }) {
   const set = (patch: Partial<CutLine>) => onChange(editRow(row, { ...row.line, ...patch }));
   const problems = lineProblems(row.line);
-  const reasons = [...row.flags.map((f) => FLAG_TEXT[f]), ...(row.decision === 'pending' ? problems : [])];
-  const included = isIncluded(row);
+  const waiting = !isIncluded(row) && row.decision !== 'rejected';
+  const reasons = waiting ? [...row.flags.map((f) => FLAG_TEXT[f]), ...problems] : [];
   const num = (value: number | null) => (value === null ? '' : String(value));
 
   return (
@@ -46,7 +46,7 @@ function Row({ row, onChange }: { row: ReviewRow; onChange: (row: ReviewRow) => 
           <input className="num" inputMode="numeric" aria-label="כמות" value={num(row.line.qty)} onChange={(e) => set({ qty: toInt(e.target.value) })} />
         </td>
         <td className="actions">
-          {!included && row.decision !== 'rejected' && (
+          {waiting && (
             <button className="primary" disabled={problems.length > 0} onClick={() => onChange({ ...row, decision: 'approved' })}>
               אישור
             </button>
@@ -58,17 +58,24 @@ function Row({ row, onChange }: { row: ReviewRow; onChange: (row: ReviewRow) => 
           )}
         </td>
       </tr>
-      <tr className="evidence">
-        <td colSpan={7}>
-          {/* the row as it is drawn on the sheet, to compare the read values against */}
-          {row.image && (
-            <div className="strip-scroll">
-              <img src={row.image} alt="השורה כפי שהיא בשרטוט" />
-            </div>
-          )}
-          {!included && row.decision !== 'rejected' && reasons.length > 0 && <div className="reasons">{reasons.join(' · ')}</div>}
-        </td>
-      </tr>
+      {reasons.length > 0 && (
+        <tr className="reasons">
+          <td colSpan={7}>{reasons.join(' · ')}</td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+// The table as it is drawn on the sheet, whole, above the values read from it.
+function ScannedTable({ image }: { image: string | null }) {
+  if (!image) return null;
+  return (
+    <>
+      <h3>הטבלה בשרטוט</h3>
+      <div className="table-scan">
+        <img src={image} alt="הטבלה כפי שהיא בשרטוט" />
+      </div>
     </>
   );
 }
@@ -104,14 +111,17 @@ export function ReviewView({
       {/* cut lists first, then what could not be read, then the tables that are something else */}
       {[...tables.filter((t) => t.kind === 'materials'), ...tables.filter((t) => t.kind === 'unknown' && t.unreadable), ...tables.filter((t) => t.kind === 'unknown' && !t.unreadable)].map((table) =>
         table.kind === 'materials' ? (
-          <section className="card" key={table.id}>
+          <section className="card review-card" key={table.id}>
             <h2>
               <span dir="ltr">{table.fileName}</span> · עמוד {table.pageNumber} · {table.rows.length} שורות
             </h2>
+            <ScannedTable image={table.image} />
+
+            <h3>הכמויות שנקראו</h3>
             {table.mapping && (
               <>
                 <p className="hint">
-                  העמודות סומנו ידנית. לטבלה כזו אין בדיקה חשבונית, ולכן שום שורה לא מאושרת אוטומטית: השווה כל שורה לשרטוט שמתחתיה.
+                  העמודות סומנו ידנית. לטבלה כזו אין בדיקה חשבונית, ולכן שום שורה לא מאושרת אוטומטית: השווה את הכמויות לטבלה שלמעלה.
                 </p>
                 <div className="row">
                   <button onClick={() => onTableChange(approveWhole(table))}>אישור כל השורות השלמות</button>
@@ -129,6 +139,16 @@ export function ReviewView({
             )}
             <div className="scroll-x">
               <table className="data review cards">
+                {/* fixed widths: every value sits under its heading, whatever the row holds */}
+                <colgroup>
+                  <col className="c-status" />
+                  <col className="c-type" />
+                  <col className="c-label" />
+                  <col className="c-num" />
+                  <col className="c-num" />
+                  <col className="c-num" />
+                  <col className="c-actions" />
+                </colgroup>
                 <thead>
                   <tr>
                     <th>מצב</th>
@@ -149,7 +169,7 @@ export function ReviewView({
             </div>
           </section>
         ) : (
-          <section className="card" key={table.id}>
+          <section className="card review-card" key={table.id}>
             <h2>
               <span dir="ltr">{table.fileName}</span> · עמוד {table.pageNumber} · {table.unreadable ? 'טבלה שלא נקראה' : 'טבלה אחרת'} ({table.size})
             </h2>
@@ -158,7 +178,7 @@ export function ReviewView({
             ) : (
               <p className="hint">הטבלה נקראה, אבל לא זוהו בה עמודות של רשימת חיתוך. אם היא כן כזו, סמן את העמודות.</p>
             )}
-            {table.image && <img className="unknown-table" src={table.image} alt="הטבלה כפי שהיא בשרטוט" />}
+            <ScannedTable image={table.image} />
             {table.raw && <MappingPanel table={table} onApply={(mapping) => onTableChange(mapTable(table, mapping))} />}
           </section>
         ),
