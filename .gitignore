@@ -12,5 +12,11 @@ Thumbs.db
 # cell images dumped by the feasibility spike
 spike/out/
 
+# runtime files copied from node_modules and models/ by scripts/copy-vendor.mjs
+public/vendor/
+
 # customer drawings and their transcribed ground truth: never published
 fixtures/
+
+# screenshots and downloads from scripts/browser-check
+scripts/browser-check/out/

@@ -866,11 +866,74 @@ a.download {
   }
 }
 
-.help video {
+/* ---- scan review ---- */
+.scroll-x {
+  overflow-x: auto;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.chip.ok {
+  background: var(--c-green-tint);
+  color: var(--c-green);
+}
+
+.chip.warn {
+  background: var(--c-yellow-tint);
+}
+
+.chip.off {
+  background: var(--c-surface-2);
+  color: var(--c-ink-muted);
+}
+
+table.review input {
   width: 100%;
-  max-width: 640px;
-  aspect-ratio: 16 / 9;
-  background: #000;
+  min-width: 90px;
+}
+
+table.review input.num {
+  min-width: 70px;
+  max-width: 110px;
+}
+
+table.review td.actions {
+  white-space: nowrap;
+}
+
+table.review td.actions button + button {
+  margin-inline-start: 6px;
+}
+
+table.review tr.rejected input {
+  color: var(--c-ink-muted);
+  text-decoration: line-through;
+}
+
+/* the row as drawn on the sheet, right under the values read from it */
+table.review tr.evidence td {
+  padding-top: 0;
+  border-top: none;
+}
+
+table.review tr.evidence img,
+img.unknown-table {
+  display: block;
+  max-width: 100%;
+  height: auto;
   border: 1px solid var(--c-line);
   border-radius: var(--r-sm);
+  background: #fff;
+}
+
+table.review .reasons {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--c-red);
 }
