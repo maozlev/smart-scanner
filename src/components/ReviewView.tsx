@@ -2,7 +2,8 @@
 
 import { lineProblems } from '@/scan/cutlist';
 import type { CutLine } from '@/scan/table';
-import { editRow, FLAG_TEXT, isIncluded } from '@/lib/review';
+import { approveWhole, editRow, FLAG_TEXT, isIncluded, mapTable, unmapTable } from '@/lib/review';
+import { MappingPanel } from './MappingPanel';
 import type { FileReport, ReviewRow, ReviewTable } from '@/lib/scanner';
 
 const toInt = (text: string): number | null => {
@@ -72,10 +73,12 @@ export function ReviewView({
   tables,
   reports,
   onRowChange,
+  onTableChange,
 }: {
   tables: ReviewTable[];
   reports: FileReport[];
   onRowChange: (row: ReviewRow) => void;
+  onTableChange: (table: ReviewTable) => void;
 }) {
   const withoutTable = reports.filter((r) => !r.error && !tables.some((t) => t.fileName === r.fileName && t.kind === 'materials'));
 
@@ -101,6 +104,17 @@ export function ReviewView({
             <h2>
               <span dir="ltr">{table.fileName}</span> · עמוד {table.pageNumber} · {table.rows.length} שורות
             </h2>
+            {table.mapping && (
+              <>
+                <p className="hint">
+                  העמודות סומנו ידנית. לטבלה כזו אין בדיקה חשבונית, ולכן שום שורה לא מאושרת אוטומטית: השווה כל שורה לשרטוט שמתחתיה.
+                </p>
+                <div className="row">
+                  <button onClick={() => onTableChange(approveWhole(table))}>אישור כל השורות השלמות</button>
+                  <button onClick={() => onTableChange(unmapTable(table))}>שינוי סימון העמודות</button>
+                </div>
+              </>
+            )}
             {table.weightTotalMatches === true && (
               <p className="hint">סכום עמודת המשקל שווה למשקל הכולל המודפס בשרטוט ({table.declaredTotalWeightKg} ק״ג).</p>
             )}
@@ -136,11 +150,12 @@ export function ReviewView({
               <span dir="ltr">{table.fileName}</span> · עמוד {table.pageNumber} · {table.unreadable ? 'טבלה שלא נקראה' : 'טבלה אחרת'} ({table.size})
             </h2>
             {table.unreadable ? (
-              <div className="note">כותרות הטבלה לא נקראו, ולכן לא ידוע מה כל עמודה מכילה. הטבלה אינה נכנסת לרשימת החיתוך.</div>
+              <div className="note">כותרות הטבלה לא נקראו, ולכן לא ידוע מה כל עמודה מכילה. היא לא תיכנס לרשימת החיתוך עד שתסמן את העמודות.</div>
             ) : (
-              <p className="hint">הטבלה נקראה, אבל אין בה עמודת אורך או פרופיל, ולכן היא אינה רשימת חיתוך ואינה נכנסת לרשימה.</p>
+              <p className="hint">הטבלה נקראה, אבל לא זוהו בה עמודות של רשימת חיתוך. אם היא כן כזו, סמן את העמודות.</p>
             )}
             {table.image && <img className="unknown-table" src={table.image} alt="הטבלה כפי שהיא בשרטוט" />}
+            {table.raw && <MappingPanel table={table} onApply={(mapping) => onTableChange(mapTable(table, mapping))} />}
           </section>
         ),
       )}

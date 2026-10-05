@@ -49,6 +49,13 @@ export interface ScannedTable {
   declaredTotalWeightKg: number | null;
   weightTotalMatches: boolean | null;
   preview: GrayImage | null; // unknown tables: the whole grid, for the operator to recognise
+  raw: RawGrid | null; // unknown tables: every cell as read, for the operator to map by hand
+}
+
+/** A grid read cell by cell with no idea what its columns mean (see manual.ts). */
+export interface RawGrid {
+  cells: CellRead[][]; // [row][col], every grid row including whatever is a header
+  rowPreviews: GrayImage[];
 }
 
 export interface PageScan {
@@ -190,20 +197,31 @@ async function scanGrid(
   }
 
   const base = { reason, bbox: grid.bbox, nRows: grid.nRows, nCols: grid.nCols, roles: cls.columnRoles };
+  const readRow = async (r: number): Promise<CellRead[]> => {
+    // the first and last grid rows were already read as header candidates
+    if (r === 0) return candidates[0]![2];
+    if (r === grid.nRows - 1) return candidates[1]![2];
+    const cells: CellRead[] = [];
+    for (let c = 0; c < grid.nCols; c++) cells.push(await ocrCell(rec, image.cell(r, c)));
+    return cells;
+  };
+
   if (cls.kind === 'unknown') {
-    return { ...base, kind: 'unknown', rows: [], declaredTotalWeightKg: null, weightTotalMatches: null, preview: shrink(image, PREVIEW_MAX_W) };
+    // Digits read in any script, so the numbers are worth having even when the headers are
+    // not understood: the operator says what each column is and types what could not be read.
+    const raw: RawGrid = { cells: [], rowPreviews: [] };
+    for (let r = 0; r < grid.nRows; r++) {
+      raw.cells.push(await readRow(r));
+      raw.rowPreviews.push(shrink(image.row(r), PREVIEW_MAX_W));
+      await onRow();
+    }
+    return { ...base, kind: 'unknown', rows: [], declaredTotalWeightKg: null, weightTotalMatches: null, preview: shrink(image, PREVIEW_MAX_W), raw };
   }
 
   const roles = cls.columnRoles;
   const read: { rowIndex: number; cells: CellRead[]; values: Partial<Record<ColumnRole, string | null>>; fields: RowFields }[] = [];
   for (const r of dataRowIndices(grid.nRows, cls)) {
-    let cells: CellRead[];
-    if (r === 0) cells = candidates[0]![2];
-    else if (r === grid.nRows - 1) cells = candidates[1]![2];
-    else {
-      cells = [];
-      for (let c = 0; c < grid.nCols; c++) cells.push(await ocrCell(rec, image.cell(r, c)));
-    }
+    const cells = await readRow(r);
     const values = roleValues(cells, roles);
     read.push({ rowIndex: r, cells, values, fields: normalizedFields(values) });
     await onRow();
@@ -224,7 +242,7 @@ async function scanGrid(
     return { rowIndex, cells, fields, flags, confidence, autoApproved: flags.length === 0, line, preview: shrink(image.row(rowIndex), PREVIEW_MAX_W) };
   });
 
-  return { ...base, kind: 'materials', rows, declaredTotalWeightKg: declared, weightTotalMatches: weightOk, preview: null };
+  return { ...base, kind: 'materials', rows, declaredTotalWeightKg: declared, weightTotalMatches: weightOk, preview: null, raw: null };
 }
 
 /** Every material table on one page. `onRow` is awaited once per data row read. */

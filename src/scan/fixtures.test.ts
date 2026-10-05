@@ -7,6 +7,7 @@ import * as ort from 'onnxruntime-web';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { cutListTable, isComplete, toCsv } from './cutlist';
+import { applyMapping, type ManualMapping } from './manual';
 import { fixHomoglyphs } from './normalize';
 import { Recognizer, type OrtLike, type OrtSessionLike } from './ocr';
 import { extractPaths, type PdfOps, type PdfPageLike } from './paths';
@@ -82,5 +83,24 @@ describe.skipIf(!available)('real sheets', () => {
     // the pile schedule cannot be read without Hebrew OCR; it must reach the operator
     const pile = tables.find((t) => t.nRows === 12 && t.nCols === 7);
     expect(pile?.kind).toBe('unknown');
+
+    // its numbers are read all the same, so the operator can map the columns by hand:
+    // top level, length in metres, diameter, type, X, Y, pile name
+    const cells = pile!.raw!.cells;
+    // (the site coordinates in columns 4-5 are read too; they are left out of this file)
+    expect([0, 1, 2, 3, 6].map((c) => cells[1]![c]!.value)).toEqual(['+11.30', '20', '80', '1', 'P1']);
+    const mapping: ManualMapping = {
+      roles: ['ignore', 'length', 'ignore', 'ignore', 'ignore', 'ignore', 'label'],
+      headerTop: 1, headerBottom: 0, unit: 'm', fixedType: 'כלונס', fixedQty: 1,
+    };
+    const rows = applyMapping(cells, mapping);
+    expect(rows).toHaveLength(11);
+    expect(rows.slice(0, 9).map((r) => r.line.lengthMm)).toEqual(Array(9).fill(20000));
+    expect(rows[0]!.line).toEqual({ type: 'כלונס', label: 'P1', lengthMm: 20000, widthMm: null, qty: 1 });
+    // The last two grid rows are merged cells covering 14 and 6 piles. They come out as one
+    // line each with the fixed quantity: the operator has to set 14 and 6. Pinned, not hidden.
+    expect(rows[9]!.line).toMatchObject({ lengthMm: 18000, qty: 1 });
+    expect(rows[9]!.line.label.split(' ')).toHaveLength(14);
+    expect(rows[10]!.line.label.split(' ')).toHaveLength(6);
   });
 });

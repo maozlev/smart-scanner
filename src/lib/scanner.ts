@@ -1,6 +1,7 @@
 // Runs the scan engine in the browser: loads pdf.js, the ONNX runtime and the OCR model from
 // /vendor on first use, then turns each PDF into reviewable rows.
-import { Recognizer, type OrtLike, type OrtSessionLike } from '@/scan/ocr';
+import type { ManualMapping } from '@/scan/manual';
+import { Recognizer, type CellRead, type OrtLike, type OrtSessionLike } from '@/scan/ocr';
 import { extractPaths, type PdfOps, type PdfPageLike } from '@/scan/paths';
 import type { GrayImage } from '@/scan/raster';
 import { scanPage, type CutLine, type ScannedTable } from '@/scan/table';
@@ -29,6 +30,9 @@ export interface ReviewTable {
   weightTotalMatches: boolean | null;
   image: string | null; // unknown tables: the whole grid
   size: string; // rows x columns, for telling unknown tables apart
+  // tables the scanner did not understand: every cell as read, for the operator to map
+  raw: { cells: CellRead[][]; rowImages: string[] } | null;
+  mapping: ManualMapping | null; // set once the operator has mapped the columns
 }
 
 export interface FileReport {
@@ -132,6 +136,8 @@ function toReview(table: ScannedTable, fileName: string, pageNumber: number, ind
     weightTotalMatches: table.weightTotalMatches,
     image: table.preview ? toDataUrl(table.preview) : null,
     size: `${table.nRows}×${table.nCols}`,
+    raw: table.raw ? { cells: table.raw.cells, rowImages: table.raw.rowPreviews.map(toDataUrl) } : null,
+    mapping: null,
   };
 }
 

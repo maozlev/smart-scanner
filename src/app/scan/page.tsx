@@ -185,7 +185,12 @@ export default function ScanPage() {
 
         {phase === 'review' && (
           <>
-            <ReviewView tables={tables} reports={reports} onRowChange={(row) => setTables(updateRow(tables, row.id, () => row))} />
+            <ReviewView
+              tables={tables}
+              reports={reports}
+              onRowChange={(row) => setTables(updateRow(tables, row.id, () => row))}
+              onTableChange={(table) => setTables(tables.map((t) => (t.id === table.id ? table : t)))}
+            />
             <div className="row">
               <button className="primary" onClick={() => setPhase('summary')}>
                 לסיכום וייצוא

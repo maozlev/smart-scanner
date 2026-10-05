@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { classifyHeuristic, dataRowIndices, declaredTotalWeight, gateDecision, type HeaderCandidate } from './classify';
 import { cutListTable, isComplete, lineProblems, toCsv, totalsByType, type CompleteLine } from './cutlist';
 import { fixHomoglyphs, parseArea, parseNumber, parsePlate, parseThk, profileKey, splitProfile } from './normalize';
+import { applyMapping, emptyMapping, mappingProblems, type ManualMapping } from './manual';
 import type { CellRead } from './ocr';
 import { validateRow, weightTotalMatches, type RowFields } from './validate';
 
@@ -135,6 +136,49 @@ describe('classify', () => {
   it('reads the printed grand total', () => {
     expect(declaredTotalWeight(['Total Weight: 3814.4 kg'])).toBe(3814.4);
     expect(declaredTotalWeight(['Scale 1:5'])).toBeNull();
+  });
+});
+
+describe('manual mapping', () => {
+  // a pile schedule as the scanner sees a Hebrew sheet: numbers read, words garbage
+  const grid = [
+    ['NTUNJ', '117V O9n', 'IJN1', 'D7U'].map((t) => read(t, 0.45)),
+    [read('P1', 0.97), read('60'), read('18.5'), read('4')],
+    [read('P2', 0.97), read('80'), read('21'), read('12')],
+    [read('JNX', 0.4), read('80'), read('2 1', 0.6), read('')],
+    blank(4),
+  ];
+  const mapping: ManualMapping = { roles: ['label', 'ignore', 'length', 'qty'], headerTop: 1, headerBottom: 0, unit: 'm', fixedType: 'כלונס', fixedQty: null };
+
+  it('turns each data row into a cut-list line in whole millimetres', () => {
+    const rows = applyMapping(grid, mapping);
+    expect(rows.map((r) => r.line)).toEqual([
+      { type: 'כלונס', label: 'P1', lengthMm: 18500, widthMm: null, qty: 4 },
+      { type: 'כלונס', label: 'P2', lengthMm: 21000, widthMm: null, qty: 12 },
+      // the unreadable mark is left for a person to type, and the missing quantity stays missing
+      { type: 'כלונס', label: '', lengthMm: 21000, widthMm: null, qty: null },
+    ]);
+    expect(rows.map((r) => r.doubtful)).toEqual([false, false, true]);
+    expect(rows.map((r) => r.rowIndex)).toEqual([1, 2, 3]);
+  });
+
+  it('reads a combined size column as a plate', () => {
+    const plates = [[read('450x174'), read('8')]];
+    const rows = applyMapping(plates, { roles: ['size', 'qty'], headerTop: 0, headerBottom: 0, unit: 'mm', fixedType: 'פלטה 14 מ"מ', fixedQty: null });
+    expect(rows[0]!.line).toEqual({ type: 'פלטה 14 מ"מ', label: '', lengthMm: 450, widthMm: 174, qty: 8 });
+  });
+
+  it('says what a mapping still lacks', () => {
+    expect(mappingProblems(emptyMapping(4), 5)).toHaveLength(3);
+    expect(mappingProblems(mapping, 5)).toEqual([]);
+    expect(mappingProblems({ ...mapping, roles: ['qty', 'qty', 'length', 'ignore'] }, 5)).toHaveLength(1);
+    expect(mappingProblems({ ...mapping, headerTop: 5 }, 5)).toHaveLength(1);
+  });
+
+  it('uses a fixed quantity when each row is one member', () => {
+    const perRow: ManualMapping = { ...mapping, roles: ['label', 'ignore', 'length', 'ignore'], fixedQty: 1 };
+    expect(mappingProblems(perRow, 5)).toEqual([]);
+    expect(applyMapping(grid, perRow).map((r) => r.line.qty)).toEqual([1, 1, 1]);
   });
 });
 
