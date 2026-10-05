@@ -1,18 +1,38 @@
 'use client';
 
 import { Cormorant_Garamond } from 'next/font/google';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { logout } from '@/app/actions';
+import { ArchiveView } from '@/components/ArchiveView';
 import { ReviewView } from '@/components/ReviewView';
 import { SummaryView } from '@/components/SummaryView';
+import {
+  combinedFiles,
+  combinedName,
+  combineEntries,
+  defaultName,
+  loadArchive,
+  restoreTables,
+  saveArchive,
+  upsertEntry,
+  type ArchiveEntry,
+  type CombineMode,
+} from '@/lib/archive';
 import { countRows, includedLines, updateRow } from '@/lib/review';
 import { scanFiles, type FileReport, type ReviewTable, type ScanProgress } from '@/lib/scanner';
 
 const brandFont = Cormorant_Garamond({ subsets: ['latin'], weight: ['500', '600'], variable: '--font-brand' });
 
 const STEPS = ['העלאה', 'סריקה', 'סקירה', 'סיכום וייצוא'];
-type Phase = 'upload' | 'review' | 'summary';
-const STEP_OF: Record<Phase, number> = { upload: 0, review: 2, summary: 3 };
+type Phase = 'upload' | 'review' | 'summary' | 'archive';
+const STEP_OF: Record<Phase, number> = { upload: 0, review: 2, summary: 3, archive: -1 };
+
+// the scan on screen, as the archive knows it
+interface Session {
+  id: string;
+  name: string;
+  files: string[];
+}
 
 const isPdf = (file: File) => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
@@ -24,7 +44,24 @@ export default function ScanPage() {
   const [tables, setTables] = useState<ReviewTable[]>([]);
   const [reports, setReports] = useState<FileReport[]>([]);
   const [failure, setFailure] = useState<string | null>(null);
+  const [archive, setArchive] = useState<ArchiveEntry[]>([]);
+  const [storageFailed, setStorageFailed] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
   const picker = useRef<HTMLInputElement>(null);
+
+  // localStorage exists only in the browser, so the archive is read after the first render
+  useEffect(() => setArchive(loadArchive()), []);
+
+  function storeArchive(entries: ArchiveEntry[]) {
+    setArchive(entries);
+    setStorageFailed(!saveArchive(entries));
+  }
+
+  // every change to the rows on screen is written through to the scan's archive entry
+  function commit(nextTables: ReviewTable[], current: Session | null = session) {
+    setTables(nextTables);
+    if (current) storeArchive(upsertEntry(archive, { ...current, tables: nextTables }, new Date()));
+  }
 
   const busy = progress !== null;
   const scanned = reports.length > 0;
@@ -46,7 +83,29 @@ export default function ScanPage() {
     setTables([]);
     setReports([]);
     setFailure(null);
+    setSession(null);
     setPhase('upload');
+  }
+
+  function restore(entry: ArchiveEntry) {
+    setFiles([]);
+    setRejected([]);
+    setFailure(null);
+    setSession({ id: entry.id, name: entry.name, files: entry.files });
+    setTables(restoreTables(entry));
+    setReports(entry.files.map((fileName) => ({ fileName, pages: 0, gridsFound: 0, error: null })));
+    setPhase('review');
+  }
+
+  function combine(entries: ArchiveEntry[], mode: CombineMode) {
+    const next: Session = { id: crypto.randomUUID(), name: combinedName(entries, mode), files: combinedFiles(entries) };
+    setFiles([]);
+    setRejected([]);
+    setFailure(null);
+    setSession(next);
+    setReports(next.files.map((fileName) => ({ fileName, pages: 0, gridsFound: 0, error: null })));
+    commit(combineEntries(entries, mode, next.id), next);
+    setPhase('summary');
   }
 
   async function scan() {
@@ -54,7 +113,10 @@ export default function ScanPage() {
     setProgress({ stage: 'loading', fileName: '', fileIndex: 0, fileCount: files.length, rowsRead: 0 });
     try {
       const result = await scanFiles(files, setProgress);
-      setTables(result.tables);
+      const names = files.map((f) => f.name);
+      const next: Session = { id: crypto.randomUUID(), name: defaultName(names), files: names };
+      setSession(next);
+      commit(result.tables, next);
       setReports(result.reports);
       setPhase('review');
     } catch (error) {
@@ -105,17 +167,25 @@ export default function ScanPage() {
           ))}
         </ol>
 
-        {scanned && (
+        {(scanned || archive.length > 0) && (
           <nav className="tabs no-print" aria-label="מסכים">
             <button className={`tab ${phase === 'upload' ? 'active' : ''}`} onClick={() => setPhase('upload')}>
               קבצים
             </button>
-            <button className={`tab ${phase === 'review' ? 'active' : ''}`} onClick={() => setPhase('review')}>
-              סקירה
-              {counts.pending > 0 && <small>{counts.pending} לבדיקה</small>}
-            </button>
-            <button className={`tab ${phase === 'summary' ? 'active' : ''}`} onClick={() => setPhase('summary')}>
-              סיכום וייצוא
+            {scanned && (
+              <>
+                <button className={`tab ${phase === 'review' ? 'active' : ''}`} onClick={() => setPhase('review')}>
+                  סקירה
+                  {counts.pending > 0 && <small>{counts.pending} לבדיקה</small>}
+                </button>
+                <button className={`tab ${phase === 'summary' ? 'active' : ''}`} onClick={() => setPhase('summary')}>
+                  סיכום וייצוא
+                </button>
+              </>
+            )}
+            <button className={`tab ${phase === 'archive' ? 'active' : ''}`} style={{ marginInlineStart: 'auto' }} onClick={() => setPhase('archive')}>
+              ארכיון
+              {archive.length > 0 && <small>{archive.length}</small>}
             </button>
           </nav>
         )}
@@ -188,8 +258,8 @@ export default function ScanPage() {
             <ReviewView
               tables={tables}
               reports={reports}
-              onRowChange={(row) => setTables(updateRow(tables, row.id, () => row))}
-              onTableChange={(table) => setTables(tables.map((t) => (t.id === table.id ? table : t)))}
+              onRowChange={(row) => commit(updateRow(tables, row.id, () => row))}
+              onTableChange={(table) => commit(tables.map((t) => (t.id === table.id ? table : t)))}
             />
             <div className="row">
               <button className="primary" onClick={() => setPhase('summary')}>
@@ -200,6 +270,24 @@ export default function ScanPage() {
         )}
 
         {phase === 'summary' && <SummaryView lines={includedLines(tables)} counts={counts} onReview={() => setPhase('review')} />}
+
+        {phase === 'archive' && (
+          <ArchiveView
+            entries={archive}
+            storageFailed={storageFailed}
+            onRestore={restore}
+            onCombine={combine}
+            onRename={(id, name) => {
+              storeArchive(archive.map((e) => (e.id === id ? { ...e, name } : e)));
+              if (session?.id === id) setSession({ ...session, name });
+            }}
+            onDelete={(id) => {
+              storeArchive(archive.filter((e) => e.id !== id));
+              // the scan on screen stays, but it no longer writes to a deleted entry
+              if (session?.id === id) setSession(null);
+            }}
+          />
+        )}
 
         {progress && (
           <div className="backdrop no-print" role="status" aria-live="polite">
