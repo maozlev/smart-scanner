@@ -1,0 +1,16 @@
+node_modules/
+*.tsbuildinfo
+.next/
+next-env.d.ts
+.vercel
+.env*
+!.env.example
+.DS_Store
+Thumbs.db
+*.log
+
+# cell images dumped by the feasibility spike
+spike/out/
+
+# customer drawings and their transcribed ground truth: never published
+fixtures/

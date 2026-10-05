@@ -1,0 +1,876 @@
+:root {
+  --c-bg: oklch(0.965 0.008 250);
+  --c-surface: #ffffff;
+  --c-surface-2: #eef1f5;
+  --c-line: #d6dce5;
+  --c-ink: #17202b;
+  --c-ink-muted: #5d6b7c;
+  --c-accent: oklch(0.42 0.12 255);
+  --c-accent-ink: #ffffff;
+  /* the navy of the login screen */
+  --c-brand: oklch(0.22 0.045 255);
+  --c-brand-line: oklch(0.86 0.05 238 / 0.28);
+  --c-brand-ink: oklch(0.97 0.01 240);
+  --c-brand-ink-muted: oklch(0.86 0.05 238 / 0.75);
+  --c-green: #1e8e5a;
+  --c-green-tint: #dff3e8;
+  --c-red: #c0392b;
+  --c-red-tint: #fbe6e3;
+  --c-yellow-tint: #fff4d1;
+  --c-scrap: #9aa5b1;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --font-ui: 'Rubik', 'Segoe UI', system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-bg: #11161d;
+    --c-surface: #1a212b;
+    --c-surface-2: #232c38;
+    --c-line: #344152;
+    --c-ink: #e6ebf2;
+    --c-ink-muted: #9aa7b8;
+    --c-accent: oklch(0.72 0.12 250);
+    --c-accent-ink: oklch(0.2 0.045 255);
+    --c-green: #4cc38a;
+    --c-green-tint: #173527;
+    --c-red: #ff8a7d;
+    --c-red-tint: #3d1d1a;
+    --c-yellow-tint: #3a3216;
+    --c-scrap: #5b6878;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--c-bg);
+  color: var(--c-ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+.app {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell > .app {
+  flex: 1;
+  width: 100%;
+}
+
+.appbar,
+.appfoot {
+  color: var(--c-brand-ink);
+  background-color: var(--c-brand);
+  /* the same drawing-sheet grid as the login screen */
+  background-image:
+    linear-gradient(oklch(0.8 0.05 240 / 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.8 0.05 240 / 0.09) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.appbar {
+  border-bottom: 1px solid var(--c-brand-line);
+}
+
+.appfoot {
+  border-top: 1px solid var(--c-brand-line);
+}
+
+.appbar-in,
+.appfoot-in {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 12px 16px;
+}
+
+.appbar-in {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Buttons on the right, wordmark on the left. The wordmark is LTR text, so a logical margin
+   would resolve against its own direction; a physical one says what is meant. */
+.appbar-in h1 {
+  order: 1;
+  margin-right: auto;
+}
+
+.brand {
+  font-family: var(--font-brand), Georgia, serif;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.brand span {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-brand-ink-muted);
+}
+
+.appfoot-in {
+  font-family: var(--font-brand), Georgia, serif;
+}
+
+/* always on the physical left, whatever the page direction */
+.appfoot-in {
+  direction: ltr;
+  text-align: left;
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  color: var(--c-brand-ink-muted);
+}
+
+.appbar button {
+  color: var(--c-brand-ink);
+  background: transparent;
+  border-color: var(--c-brand-line);
+}
+
+.appbar button:hover {
+  background: oklch(0.3 0.05 255);
+}
+
+.appbar button.primary {
+  color: var(--c-brand);
+  background: oklch(0.96 0.02 235);
+  border-color: oklch(0.96 0.02 235);
+}
+
+.appbar button.primary:hover {
+  background: #fff;
+}
+
+.appbar button.ghost {
+  border-color: transparent;
+  color: var(--c-brand-ink-muted);
+}
+
+.appbar button:focus-visible {
+  outline-color: oklch(0.9 0.05 230);
+}
+
+.tabs,
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+
+.card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-md);
+  padding: 14px;
+}
+
+.card h2 {
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 12px;
+}
+
+button {
+  font: inherit;
+  color: var(--c-ink);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-sm);
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--c-surface-2);
+}
+
+button.primary {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-accent-ink);
+  font-weight: 600;
+}
+
+button.ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--c-ink-muted);
+  padding: 4px 8px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 1px;
+}
+
+.tab {
+  border-radius: 999px;
+}
+
+.tab.active {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-accent-ink);
+}
+
+.tab small {
+  opacity: 0.8;
+  margin-inline-start: 6px;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: var(--c-ink);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-sm);
+  padding: 5px 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+input[type='checkbox'] {
+  width: auto;
+}
+
+textarea {
+  min-height: 180px;
+  direction: rtl;
+}
+
+.name-input {
+  font-size: 16px;
+  font-weight: 600;
+  max-width: 320px;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.field label {
+  display: block;
+  font-size: 12px;
+  color: var(--c-ink-muted);
+  margin-bottom: 3px;
+}
+
+.field .hint,
+.hint {
+  font-size: 12px;
+  color: var(--c-ink-muted);
+}
+
+details.advanced {
+  margin-top: 10px;
+}
+
+details.advanced summary {
+  cursor: pointer;
+  color: var(--c-accent);
+  margin-bottom: 8px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th {
+  text-align: start;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-ink-muted);
+  padding: 0 4px 4px;
+}
+
+td {
+  padding: 2px 4px;
+}
+
+table.data td,
+table.data th {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--c-line);
+}
+
+.kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.kpi {
+  background: var(--c-surface-2);
+  border-radius: var(--r-sm);
+  padding: 6px 12px;
+}
+
+.kpi b {
+  display: block;
+  font-size: 16px;
+}
+
+.kpi span {
+  font-size: 12px;
+  color: var(--c-ink-muted);
+}
+
+.alert {
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  background: var(--c-red-tint);
+  color: var(--c-red);
+}
+
+.alert ul {
+  margin: 0;
+  padding-inline-start: 18px;
+}
+
+.note {
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  background: var(--c-yellow-tint);
+}
+
+.pattern {
+  margin-bottom: 12px;
+}
+
+.pattern-head {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.pattern-head .muted,
+.muted {
+  color: var(--c-ink-muted);
+}
+
+/* docs/07 §4: a drawing is always LTR, the datum end is on the left */
+.strip {
+  direction: ltr;
+  display: flex;
+  height: 34px;
+  border: 1px solid var(--c-ink);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #10161d;
+  border-inline-end: 2px solid var(--c-ink);
+  min-width: 0;
+}
+
+.seg.trim {
+  background: var(--c-ink);
+}
+
+.seg.offcut {
+  border-inline-end: none;
+  color: var(--c-ink);
+  background: repeating-linear-gradient(45deg, var(--c-scrap) 0 4px, transparent 4px 8px);
+}
+
+.seg.offcut.remnant {
+  background: repeating-linear-gradient(45deg, var(--c-green) 0 4px, var(--c-green-tint) 4px 8px);
+}
+
+.sheets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+}
+
+.sheet svg {
+  width: 100%;
+  height: auto;
+  direction: ltr;
+  background: var(--c-surface-2);
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.dialog {
+  width: min(640px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  .pattern,
+  .sheet {
+    break-inside: avoid;
+  }
+}
+
+pre.example {
+  margin: 6px 0;
+  padding: 8px 10px;
+  background: var(--c-surface-2);
+  border-radius: var(--r-sm);
+  font: inherit;
+  white-space: pre-wrap;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  counter-reset: step;
+  font-size: 13px;
+  color: var(--c-ink-muted);
+}
+
+.steps li {
+  counter-increment: step;
+  padding: 4px 12px;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+}
+
+.steps li::before {
+  content: counter(step) '. ';
+}
+
+.steps li.done {
+  color: var(--c-green);
+  border-color: var(--c-green);
+}
+
+.steps li.current {
+  color: var(--c-ink);
+  border-color: var(--c-accent);
+  font-weight: 600;
+}
+
+.card.empty {
+  text-align: center;
+  padding: 40px 16px;
+}
+
+button.link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--c-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+button.link:hover {
+  background: none;
+}
+
+select.inline {
+  width: auto;
+}
+
+/* The engine runs on the page's own thread, so only animations the browser can run without it
+   keep moving during a calculation: transform and opacity. Nothing here animates anything else. */
+.computing {
+  width: min(380px, 100%);
+  align-items: center;
+  text-align: center;
+  padding: 28px 24px;
+}
+
+.computing h2,
+.computing p {
+  margin: 0;
+}
+
+.spinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 4px solid var(--c-surface-2);
+  border-top-color: var(--c-accent);
+  animation: spin 0.9s linear infinite;
+  will-change: transform;
+}
+
+.bar {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--c-surface-2);
+  overflow: hidden;
+  direction: ltr;
+}
+
+.bar-done {
+  position: absolute;
+  inset: 0;
+  background: var(--c-accent);
+  transform-origin: left;
+  transition: transform 0.2s;
+}
+
+.bar-sweep {
+  position: absolute;
+  inset: 0;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 55%), transparent);
+  animation: sweep 1.2s linear infinite;
+  will-change: transform;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+  .bar-sweep {
+    animation: none;
+    display: none;
+  }
+}
+
+.verdict.good {
+  color: var(--c-green);
+  font-weight: 600;
+}
+
+.verdict.bad {
+  color: var(--c-red);
+  font-weight: 600;
+}
+
+.dialog.wide {
+  width: min(980px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.dialog h3 {
+  font-size: 14px;
+}
+
+a.download {
+  color: var(--c-accent);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.dialog {
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.help h3 {
+  font-size: 15px;
+  margin-top: 6px;
+}
+
+.help p,
+.help ul,
+.help ol {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.help ul,
+.help ol {
+  padding-inline-start: 20px;
+}
+
+.help li + li {
+  margin-top: 4px;
+}
+
+/* ---------- phones ----------
+   The same screens, rearranged for a narrow touch screen: one column, large touch targets, the
+   two main actions fixed at the bottom, wide tables turned into cards or scrolled sideways. */
+.quickbar {
+  display: none;
+}
+
+@media (max-width: 699px) {
+  .shell {
+    padding-bottom: 68px; /* room for the fixed action bar */
+  }
+
+  .app {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  /* 16 px keeps iOS from zooming the page when a field is focused */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+    padding: 8px;
+  }
+
+  button {
+    min-height: 40px;
+  }
+
+  .desk-only,
+  .steps,
+  .brand span {
+    display: none;
+  }
+
+  .appbar-in {
+    padding: 8px 10px;
+    flex-wrap: nowrap;
+  }
+
+  .brand {
+    font-size: 24px;
+  }
+
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .tabs > * {
+    flex: none;
+  }
+
+  .grid2,
+  .sheets {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .name-input {
+    max-width: none;
+  }
+
+  td {
+    padding: 2px;
+  }
+
+  button.ghost {
+    padding: 4px 6px;
+  }
+
+  /* a table of figures becomes one card per row, each figure beside its column name */
+  table.cards thead {
+    display: none;
+  }
+
+  table.cards,
+  table.cards tbody {
+    display: block;
+  }
+
+  table.cards tr {
+    display: block;
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-sm);
+    padding: 6px 10px;
+    margin-bottom: 8px;
+  }
+
+  table.cards td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border: none;
+    padding: 3px 0;
+  }
+
+  table.cards td::before {
+    content: attr(data-label);
+    color: var(--c-ink-muted);
+  }
+
+  table.cards td:first-child {
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  table.cards td:first-child::before {
+    content: none;
+  }
+
+  /* any other wide table scrolls sideways inside its card instead of stretching the page */
+  table.data:not(.cards) {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .backdrop {
+    padding: 8px;
+    z-index: 20; /* above the fixed action bar */
+  }
+
+  /* a dialog's action buttons stay in view while its content scrolls */
+  .dialog > .row:last-child {
+    position: sticky;
+    bottom: -12px;
+    margin: 0 -12px -12px;
+    padding: 10px 12px;
+    background: var(--c-surface);
+    border-top: 1px solid var(--c-line);
+  }
+
+  .dialog.help > .row:last-child,
+  .dialog.computing > .row:last-child {
+    position: static;
+  }
+
+  .dialog,
+  .dialog.wide {
+    width: 100%;
+    max-height: calc(100vh - 16px);
+  }
+
+  .appfoot-in {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  .quickbar {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 5;
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    background: var(--c-brand);
+    border-top: 1px solid var(--c-brand-line);
+  }
+
+  .quickbar button {
+    flex: 1;
+    min-height: 48px;
+    font-size: 16px;
+    color: var(--c-brand-ink);
+    background: transparent;
+    border-color: var(--c-brand-line);
+  }
+
+  .quickbar button.primary {
+    flex: 1.4;
+    color: var(--c-brand);
+    background: oklch(0.96 0.02 235);
+    border-color: oklch(0.96 0.02 235);
+    font-weight: 700;
+  }
+}
+
+.help video {
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-sm);
+}
