@@ -69,6 +69,8 @@ interface Runtime {
 }
 let runtime: Promise<Runtime> | null = null;
 
+const OCR_THREADS = Number(process.env.NEXT_PUBLIC_OCR_THREADS ?? 4);
+
 // Loaded by URL so the bundler does not try to package WebAssembly glue and a 10 MB model.
 const load = (url: string) => import(/* webpackIgnore: true */ /* turbopackIgnore: true */ url);
 
@@ -88,7 +90,9 @@ function loadRuntime(): Promise<Runtime> {
     ]);
     pdfjs.GlobalWorkerOptions.workerSrc = '/vendor/pdf.worker.min.mjs';
     ort.env.wasm.wasmPaths = '/vendor/ort/';
-    ort.env.wasm.numThreads = 1;
+    // Threads need SharedArrayBuffer, which the browser grants only to a cross-origin isolated
+    // page (the headers in next.config.ts). Without it the recognizer runs on one core.
+    ort.env.wasm.numThreads = globalThis.crossOriginIsolated ? Math.min(OCR_THREADS, navigator.hardwareConcurrency || 1) : 1;
     const session = await ort.InferenceSession.create(model);
     return { pdfjs, rec: new Recognizer(ort, session, keys) };
   })();

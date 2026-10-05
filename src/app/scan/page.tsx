@@ -219,7 +219,7 @@ export default function ScanPage() {
                 <div className="bar-done" style={{ transform: `scaleX(${progress.fileIndex / progress.fileCount})` }} />
                 <div className="bar-sweep" />
               </div>
-              <p className="hint">גיליון גדול יכול לקחת עד דקה.</p>
+              <p className="hint">גיליון לוקח בדרך כלל כ-20 שניות. שורה עם תאים ממוזגים נקראת לאט יותר, והמונה עומד בזמן הזה.</p>
             </div>
           </div>
         )}
