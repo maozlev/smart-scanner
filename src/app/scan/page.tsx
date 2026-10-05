@@ -4,6 +4,7 @@ import { Cormorant_Garamond } from 'next/font/google';
 import { useEffect, useRef, useState } from 'react';
 import { logout } from '@/app/actions';
 import { ArchiveView } from '@/components/ArchiveView';
+import { HelpDialog } from '@/components/HelpDialog';
 import { ReviewView } from '@/components/ReviewView';
 import { SummaryView } from '@/components/SummaryView';
 import {
@@ -34,6 +35,8 @@ interface Session {
   files: string[];
 }
 
+const DEMO_URL = '/demo/demo-drawing.pdf';
+
 const isPdf = (file: File) => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
 export default function ScanPage() {
@@ -47,6 +50,7 @@ export default function ScanPage() {
   const [archive, setArchive] = useState<ArchiveEntry[]>([]);
   const [storageFailed, setStorageFailed] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
+  const [helping, setHelping] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
 
   // localStorage exists only in the browser, so the archive is read after the first render
@@ -75,6 +79,20 @@ export default function ScanPage() {
     setFiles([...files, ...incoming.filter((f) => isPdf(f) && !known.has(`${f.name}:${f.size}`))]);
     setRejected(incoming.filter((f) => !isPdf(f)).map((f) => f.name));
     setPhase('upload');
+  }
+
+  // the invented shed drawing, for trying the system without a drawing of one's own
+  async function loadDemo() {
+    setFailure(null);
+    try {
+      const response = await fetch(DEMO_URL);
+      if (!response.ok) throw new Error(String(response.status));
+      const demo = new File([await response.blob()], 'demo-drawing.pdf', { type: 'application/pdf' });
+      setFiles((current) => (current.some((f) => f.name === demo.name) ? current : [...current, demo]));
+      setPhase('upload');
+    } catch (error) {
+      setFailure(`טעינת השרטוט לדוגמה נכשלה (${error instanceof Error ? error.message : String(error)})`);
+    }
   }
 
   function clearAll() {
@@ -120,7 +138,7 @@ export default function ScanPage() {
       setReports(result.reports);
       setPhase('review');
     } catch (error) {
-      setFailure(error instanceof Error ? error.message : String(error));
+      setFailure(`הסריקה נכשלה: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setProgress(null);
     }
@@ -141,15 +159,17 @@ export default function ScanPage() {
           <h1 className="brand" dir="ltr" lang="en">
             Smart Scanner <span>Drawings to BOM</span>
           </h1>
-          <button onClick={() => picker.current?.click()} disabled={busy}>
+          {/* on a phone these two live in the bar at the bottom of the screen (.quickbar) */}
+          <button className="desk-only" onClick={() => picker.current?.click()} disabled={busy}>
             העלאת שרטוטים
           </button>
-          <button className="primary" onClick={scan} disabled={busy || files.length === 0}>
+          <button className="primary desk-only" onClick={scan} disabled={busy || files.length === 0}>
             סריקה
           </button>
           <button onClick={clearAll} disabled={busy || (files.length === 0 && !scanned)}>
             ניקוי הכל
           </button>
+          <button onClick={() => setHelping(true)}>הסבר</button>
           <form action={logout}>
             <button className="ghost" type="submit">
               יציאה
@@ -202,7 +222,7 @@ export default function ScanPage() {
           }}
         />
 
-        {failure && <div className="alert">הסריקה נכשלה: {failure}</div>}
+        {failure && <div className="alert">{failure}</div>}
 
         {phase === 'upload' && rejected.length > 0 && (
           <div className="alert">
@@ -215,9 +235,15 @@ export default function ScanPage() {
             <div className="card empty" {...drop}>
               <h2>אין שרטוטים</h2>
               <p className="hint">גרור לכאן קובצי PDF של שרטוטים, או בחר אותם מהמחשב. אפשר להעלות כמה קבצים יחד.</p>
-              <button className="primary" onClick={() => picker.current?.click()}>
-                בחירת קבצים
-              </button>
+              <div className="row" style={{ justifyContent: 'center' }}>
+                <button className="primary" onClick={() => picker.current?.click()}>
+                  בחירת קבצים
+                </button>
+                <button onClick={loadDemo}>טעינת שרטוט לדוגמה</button>
+              </div>
+              <p className="hint">
+                פעם ראשונה כאן? ״הסבר״ למעלה מסביר איך המערכת עובדת, עם סרטון קצר.
+              </p>
             </div>
           ) : (
             <section className="card" {...drop}>
@@ -245,7 +271,7 @@ export default function ScanPage() {
                 </tbody>
               </table>
               <p className="hint">הסריקה רצה כולה בדפדפן; השרטוטים לא נשלחים לשום שרת.</p>
-              <div className="row">
+              <div className="row desk-only">
                 <button className="primary" onClick={scan} disabled={busy}>
                   סריקה
                 </button>
@@ -311,7 +337,18 @@ export default function ScanPage() {
             </div>
           </div>
         )}
+        {helping && <HelpDialog onClose={() => setHelping(false)} />}
       </main>
+
+      {/* phones only (see .quickbar): the header's two main buttons, within thumb reach */}
+      <div className="quickbar no-print">
+        <button onClick={() => picker.current?.click()} disabled={busy}>
+          העלאה
+        </button>
+        <button className="primary" onClick={scan} disabled={busy || files.length === 0}>
+          סריקה
+        </button>
+      </div>
 
       <footer className="appfoot no-print">
         <div className="appfoot-in" lang="en">

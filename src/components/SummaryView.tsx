@@ -37,7 +37,7 @@ export function SummaryView({ lines, counts, onReview }: { lines: CompleteLine[]
         {totals.length === 0 ? (
           <p className="hint">אין שורות מאושרות.</p>
         ) : (
-          <table className="data">
+          <table className="data cards">
             <thead>
               <tr>
                 <th>סוג</th>
@@ -51,10 +51,15 @@ export function SummaryView({ lines, counts, onReview }: { lines: CompleteLine[]
               {totals.map((t) => (
                 <tr key={`${t.plate}:${t.type}`}>
                   <td dir="auto">{t.type}</td>
-                  <td>{t.lines}</td>
-                  <td>{t.pieces}</td>
-                  <td>{t.plate ? '' : metres(t.totalLengthMm)}</td>
-                  <td>{t.plate ? squareMetres(t.totalAreaMm2) : ''}</td>
+                  <td data-label="שורות">{t.lines}</td>
+                  <td data-label="חלקים">{t.pieces}</td>
+                  {/* on a phone each figure is a labelled line, so the one that does not apply is left out */}
+                  <td data-label="אורך כולל (מ׳)" className={t.plate ? 'na' : undefined}>
+                    {t.plate ? '' : metres(t.totalLengthMm)}
+                  </td>
+                  <td data-label="שטח כולל (מ״ר)" className={t.plate ? undefined : 'na'}>
+                    {t.plate ? squareMetres(t.totalAreaMm2) : ''}
+                  </td>
                 </tr>
               ))}
             </tbody>

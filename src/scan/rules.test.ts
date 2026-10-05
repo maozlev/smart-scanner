@@ -41,6 +41,16 @@ describe('normalize', () => {
     expect(splitProfile('LegL160x160x15 galvanized')).toEqual({ key: 'L160X160X15', rest: 'Leg galvanized' });
   });
 
+  it('reads rolled sections named by a series and one size', () => {
+    expect(splitProfile('Column HEA200')).toEqual({ key: 'HEA200', rest: 'Column' });
+    expect(splitProfile('RafterIPE 240')).toEqual({ key: 'IPE240', rest: 'Rafter' });
+    expect(profileKey('Purlin UPN120 galvanized')).toBe('UPN120');
+    // a size with an "x" is still the full designation, not a series
+    expect(profileKey('Beam HEA200x6000')).toBe('HEA200X6000');
+    expect(profileKey('PIPE100')).toBeNull();
+    expect(profileKey('Type 200')).toBeNull();
+  });
+
   it('turns an ideographic space into a space', () => {
     expect(fixHomoglyphs('Leg　L160x160x15')).toBe('Leg L160x160x15');
   });

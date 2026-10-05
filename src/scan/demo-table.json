@@ -1,0 +1,26 @@
+{
+  "comment": "An invented steel-shed bill of materials. scripts/make-demo.mjs draws it into public/demo/demo-drawing.pdf, and demo.test.ts scans that file and expects these rows back. Weights are qty x length x the profile's kg/m; plates are area x thickness x 7850 kg/m3.",
+  "title": "STEEL SHED 12x6 m - BILL OF MATERIALS",
+  "header": ["Item", "Qty", "Description", "Length", "Total Length", "Total Weight"],
+  "rows": [
+    ["101", "4", "Column HEA200", "4200", "16800", "710.6"],
+    ["102", "6", "Rafter IPE240", "6150", "36900", "1132.8"],
+    ["103", "12", "Purlin UPN120", "5000", "60000", "804.0"],
+    ["104", "8", "Brace L60x60x6", "2850", "22800", "123.6"],
+    ["105", "16", "Girt RHS80x40x3", "3000", "48000", "249.1"],
+    ["106", "4", "Tie L50x50x5", "1760", "7040", "26.5"],
+    ["107", "8", "Base Plate THK 20 mm", "400x300", "0.9600 m²", "150.7"],
+    ["108", "12", "Gusset Plate THK 10 mm", "250x180", "0.5400 m²", "42.4"]
+  ],
+  "totalWeightKg": 3239.7,
+  "cutList": [
+    ["HEA200", "101 Column", "4200", "", "4"],
+    ["IPE240", "102 Rafter", "6150", "", "6"],
+    ["UPN120", "103 Purlin", "5000", "", "12"],
+    ["L60X60X6", "104 Brace", "2850", "", "8"],
+    ["RHS80X40X3", "105 Girt", "3000", "", "16"],
+    ["L50X50X5", "106 Tie", "1760", "", "4"],
+    ["פלטה 20 מ\"מ", "107 Base Plate THK 20 mm", "400", "300", "8"],
+    ["פלטה 10 מ\"מ", "108 Gusset Plate THK 10 mm", "250", "180", "12"]
+  ]
+}

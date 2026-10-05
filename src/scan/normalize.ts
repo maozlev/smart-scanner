@@ -16,7 +16,11 @@ export function fixHomoglyphs(text: string): string {
 const NUM_RE = /^[+\-]?\d{1,3}(?:[,.]\d{3})*(?:[.,]\d+)?$|^[+\-]?\d+(?:[.,]\d+)?$/;
 const PLATE_RE = /^(\d+(?:[.,]\d+)?)\s*[xX×]\s*(\d+(?:[.,]\d+)?)$/;
 const PROFILE_RE = /([A-Za-z]{1,4})\s*\.?\s*(\d+(?:[.,]\d+)?(?:\s*[xX×]\s*\d+(?:[.,]\d+)?){1,3})/;
-const THK_RE = /THK\s*\.?\s*(\d+(?:[.,]\d+)?)\s*mm/i;
+// Rolled sections named by a series and one size ("HEA200", "IPE 240"), with no "x". Upper case
+// only and not glued to another capital, so "PIPE100" is not read as IPE100; a lower-case
+// word the OCR merged in front ("ColumnHEA200") still matches.
+const SERIES_RE = /(?<![A-Z])(HEA|HEB|HEM|IPE|IPN|INP|UPN|UNP|UPE)\s*(\d{2,4})(?![\dxX×.,])/;
+const THK_RE =/THK\s*\.?\s*(\d+(?:[.,]\d+)?)\s*mm/i;
 const AREA_RE = /^(\d+(?:[.,]\d+)?)\s*m²$/;
 
 // the OCR merges words ("LegL160x160x15"), so the letters captured before the numbers are
@@ -77,7 +81,12 @@ export function parsePlate(raw: string | null | undefined): [number, number] | n
 export function splitProfile(text: string): { key: string; rest: string } | null {
   const fixed = fixHomoglyphs(text);
   const m = PROFILE_RE.exec(fixed);
-  if (!m) return null;
+  if (!m) {
+    const series = SERIES_RE.exec(fixed);
+    if (!series) return null;
+    const around = `${fixed.slice(0, series.index)} ${fixed.slice(series.index + series[0].length)}`;
+    return { key: series[1]! + series[2]!, rest: around.replace(/\s+/g, ' ').trim() };
+  }
   const designator = trimDesignator(m[1]!);
   // letters the OCR glued on in front of the designator ("LegL160...") belong to the rest
   const before = fixed.slice(0, m.index) + m[1]!.slice(0, m[1]!.length - designator.length);

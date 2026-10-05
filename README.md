@@ -14,10 +14,13 @@
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm test             # 36 בדיקות, כדקה וחצי (כולל סריקה מלאה של שני גיליונות אמיתיים)
+npm test             # 38 בדיקות, כדקה וחצי (כולל סריקה מלאה של שרטוט ההדגמה ושל שני גיליונות אמיתיים)
 npm run typecheck
 npm run build        # next build --webpack, כמו בנסטינג
-node scripts/browser-check/flow.mjs http://localhost:3000   # הזרימה כולה ב-Edge אמיתי
+node scripts/browser-check/phone.mjs http://localhost:3000  # טלפון, על שרטוט ההדגמה; רץ בלי fixtures/
+node scripts/browser-check/flow.mjs http://localhost:3000   # הזרימה כולה ב-Edge אמיתי (וגם hebrew.mjs, archive.mjs; דורשים fixtures/)
+node scripts/make-demo.mjs                                  # מצייר מחדש את public/demo/demo-drawing.pdf
+node scripts/demo-video/record.mjs <כתובת> <נתיב ל-ffmpeg>  # מקליט מחדש את סרטון ההדגמה
 ```
 
 - `dev` ו-`build` מריצים קודם את `scripts/copy-vendor.mjs`, שמעתיק ל-`public/vendor` את pdf.js, את מנוע ה-ONNX ואת
@@ -40,10 +43,12 @@ src/scan/         מנוע הסריקה. TypeScript טהור, בלי DOM; רץ �
   cutlist.ts        מבנה הקובץ שהנסטינג מייבא, CSV, סיכום לפי חומר
 src/lib/          scanner.ts (טעינת המנוע בדפדפן והרצה), review.ts (מה נכנס לרשימה), archive.ts (ארכיון ומיגרציה),
                   export.ts, auth.ts
-src/components/   ReviewView, MappingPanel, SummaryView, ArchiveView, login/* (מהנסטינג, בלי שינוי)
+src/components/   ReviewView, MappingPanel, SummaryView, ArchiveView, HelpDialog, login/* (מהנסטינג; רק נוסח הודעת הטלפון שונה)
 src/app/          page.tsx (כניסה), scan/page.tsx (המסך), actions.ts, api/auth/google, globals.css
 src/proxy.ts      מגן על /scan
-scripts/          copy-vendor.mjs, browser-check/ (flow.mjs, hebrew.mjs, archive.mjs)
+scripts/          copy-vendor.mjs, make-demo.mjs, demo-video/record.mjs, browser-check/ (phone, flow, hebrew, archive)
+public/demo/      demo-drawing.pdf: סככת פלדה בדויה עם טבלת כמויות, מצוירת מ-src/scan/demo-table.json
+public/demo-video demo.mp4 (39 שניות, בלי קול, 0.46MB) ו-poster.jpg
 models/           מודל הזיהוי (10.9MB) והמילון שלו
 fixtures/         קובצי אמת ושרטוטי לקוחות. לא במאגר (סעיף 6)
 ```
@@ -58,6 +63,8 @@ fixtures/         קובצי אמת ושרטוטי לקוחות. לא במאגר
 | כללים | `src/scan/rules.test.ts` | מספרים, פלטות, פרופילים, בדיקה חשבונית, שער הטבלאות, מבנה הקובץ |
 | הזרימה בדפדפן | `scripts/browser-check/flow.mjs` | כניסה, העלאה, סריקה (16 שנ' ל-NCD5168 על ארבע ליבות, 41 על אחת), סקירה, עריכה, סיכום, ייצוא; ה-CSV שיוצא מהדפדפן זהה בית-בבית לזה של Node |
 | ארכיון ומיגרציה | `src/lib/archive.test.ts`, `scripts/browser-check/archive.mjs` | שמירה אוטומטית, עדכון בזמן סקירה, שרידות ברענון, שינוי שם, שחזור עם ההחלטות, שתי המיגרציות (59 שורות; 10 חומרים באיחוד, 19 בנפרד), מחיקה |
+| שרטוט ההדגמה | `src/scan/demo.test.ts` | 8 מתוך 8 שורות נקראות ומאושרות, המשקל הכולל מתאים, רשימת החיתוך זהה לצפוי, ובלוק הכותרת לא מוצע כטבלה. רץ בכל מקום, בלי `fixtures/` |
+| טלפון (390×844, מגע מדומה) | `scripts/browser-check/phone.mjs` | הודעת ״מומלץ להשתמש במחשב״ בכניסה, סרגל תחתון עם ״העלאה״ ו״סריקה״, חלון ההסבר עם הסרטון, סריקה, סקירה ככרטיסים, עריכה, סיכום, ארכיון; אף מסך לא גולש לרוחב |
 | ייבוא בנסטינג | בדיקה חד-פעמית עם `parseCutList` של הנסטינג | ה-CSV של NCD5168 מיובא כ-30 שורות: 6 פרופילים ו-4 עוביי פלטה |
 
 ### מגבלות ידועות
@@ -78,7 +85,11 @@ fixtures/         קובצי אמת ושרטוטי לקוחות. לא במאגר
 - **הארכיון שומר שורות, לא שרטוטים.** כל סריקה נשמרת אוטומטית ב-localStorage (עד 50) ומתעדכנת בכל שינוי בסקירה. לא נשמרות תמונות השורות, וגם לא טבלאות שלא סומנו; סריקה משוחזרת מציגה ערכים בלי השרטוט שמתחתיהם. הארכיון קיים בדפדפן הזה בלבד.
 - **מיגרציה** בונה רשימת חיתוך אחת מכמה סריקות שבארכיון. ״איחוד״ משאיר את סוגי החומר, כך שהנסטינג חותך יחד חלקים מאותו חומר מכל הסריקות. ״רשימה משולבת״ מוסיפה לכל סוג את שם הסריקה, כך שכל סריקה נחתכת בנפרד. הסימונים לא משתנים: שני חלקים באותו סימון משתי סריקות לא יובחנו בתוכנית החיתוך של איחוד.
 - **רענון הדף** מנקה את המסך; הסריקה עצמה נשארת בארכיון ומשחזרים אותה משם.
-- **לא נבדק:** טלפון, PDF עם כמה עמודים, קובץ סרוק (אמור לצאת "לא נמצאה טבלה"), וגרירת קבצים.
+- **חלון ההסבר** (`HelpDialog.tsx`) מתאר את התנהגות המערכת; כל משפט בו חייב להישאר נכון לקוד, וכשמשנים התנהגות מעדכנים גם אותו.
+- **הסרטון מתיישן כשהמסכים משתנים.** הוא הקלטה של דפדפן אמיתי שעובר על המערכת עם שרטוט ההדגמה; מקליטים מחדש עם `record.mjs`. צריך ffmpeg מלא (למשל מהחבילה `ffmpeg-static`, שאינה תלות של הפרויקט).
+- **ייעודי פרופיל:** מזוהים `L60x60x6`, `RHS80x40x3` וכדומה, וגם סדרות עם מידה אחת (`HEA200`, `IPE240`, `UPN120`). ייעוד אחר נשאר בלי סוג חומר והשורה מסומנת לבדיקה.
+- **הטלפון נבדק בדפדפן Edge עם מגע מדומה**, לא בטלפון אמיתי. סימון עמודות ומיגרציה לא נבדקו שם.
+- **לא נבדק:** PDF עם כמה עמודים, קובץ סרוק (אמור לצאת "לא נמצאה טבלה"), וגרירת קבצים.
 
 ## 1. מה הכלי המקורי עושה
 

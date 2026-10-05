@@ -30,19 +30,19 @@ function Row({ row, onChange }: { row: ReviewRow; onChange: (row: ReviewRow) => 
         <td>
           <Status row={row} />
         </td>
-        <td>
+        <td data-label="סוג">
           <input dir="auto" aria-label="סוג" value={row.line.type} onChange={(e) => set({ type: e.target.value })} />
         </td>
-        <td>
+        <td data-label="סימון">
           <input dir="auto" aria-label="סימון" value={row.line.label} onChange={(e) => set({ label: e.target.value })} />
         </td>
-        <td>
+        <td data-label="אורך (מ״מ)">
           <input className="num" inputMode="numeric" aria-label="אורך" value={num(row.line.lengthMm)} onChange={(e) => set({ lengthMm: toInt(e.target.value) })} />
         </td>
-        <td>
+        <td data-label="רוחב (מ״מ)">
           <input className="num" inputMode="numeric" aria-label="רוחב" value={num(row.line.widthMm)} onChange={(e) => set({ widthMm: toInt(e.target.value) })} />
         </td>
-        <td>
+        <td data-label="כמות">
           <input className="num" inputMode="numeric" aria-label="כמות" value={num(row.line.qty)} onChange={(e) => set({ qty: toInt(e.target.value) })} />
         </td>
         <td className="actions">
@@ -61,7 +61,11 @@ function Row({ row, onChange }: { row: ReviewRow; onChange: (row: ReviewRow) => 
       <tr className="evidence">
         <td colSpan={7}>
           {/* the row as it is drawn on the sheet, to compare the read values against */}
-          {row.image && <img src={row.image} alt="השורה כפי שהיא בשרטוט" />}
+          {row.image && (
+            <div className="strip-scroll">
+              <img src={row.image} alt="השורה כפי שהיא בשרטוט" />
+            </div>
+          )}
           {!included && row.decision !== 'rejected' && reasons.length > 0 && <div className="reasons">{reasons.join(' · ')}</div>}
         </td>
       </tr>
@@ -124,7 +128,7 @@ export function ReviewView({
               </div>
             )}
             <div className="scroll-x">
-              <table className="data review">
+              <table className="data review cards">
                 <thead>
                   <tr>
                     <th>מצב</th>

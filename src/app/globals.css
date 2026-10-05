@@ -968,3 +968,59 @@ table.review .reasons {
   font-size: 12px;
   color: var(--c-red);
 }
+
+/* ---- scan screens on a phone ---- */
+@media (max-width: 699px) {
+  /* a figure that does not apply to this row (length of a plate) takes no line */
+  table.cards td.na {
+    display: none;
+  }
+
+  table.review.cards input,
+  table.review.cards input.num {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    max-width: 64%;
+  }
+
+  table.review.cards td.actions {
+    justify-content: flex-end;
+    padding-top: 6px;
+  }
+
+  /* a row and the strip of drawing under it read as one card */
+  table.review.cards tr:not(.evidence) {
+    margin-bottom: 0;
+    border-bottom: none;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  table.review.cards tr.evidence {
+    border-top: none;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    padding-top: 0;
+  }
+
+  table.review.cards tr.evidence td {
+    display: block;
+  }
+
+  /* the strip keeps a readable height and scrolls sideways instead of shrinking to a hairline */
+  .strip-scroll {
+    overflow-x: auto;
+    direction: ltr; /* the drawing reads left to right: start at its first column */
+  }
+
+  table.review tr.evidence .strip-scroll img {
+    max-width: none;
+    width: auto;
+    height: 46px;
+  }
+
+  .mapping .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
